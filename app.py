@@ -136,9 +136,7 @@ def format_score(value: float) -> str:
 
 
 
-# Suppress debug output when loading models
-with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-    model, threshold = load_models()
+
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Chọn trang:", ["EDA", "Model Deployment", "Evaluation"])
@@ -189,6 +187,7 @@ if page == "EDA":
             st.dataframe(df.head(10))
 
 elif page == "Model Deployment":
+    model, threshold = load_models()
     st.title("Model Deployment")
     st.markdown("---")
     st.write("Nhập thông số nước để dự đoán chất lượng nước uống.")
