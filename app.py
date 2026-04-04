@@ -80,14 +80,12 @@ def patch_legacy_numpy_pickle():
 def load_models():
     patch_legacy_numpy_pickle()
 
-    imputer = None
-    scaler = None
     model = None
     threshold = 0.5  # Ngưỡng mặc định
     
     if not MODELS_DIR.exists():
         st.error(f"❌ Không tìm thấy thư mục mô hình: {MODELS_DIR}")
-        return None, None, None, threshold
+        return None, threshold
 
     def safe_load(path):
         try:
@@ -97,18 +95,13 @@ def load_models():
             st.warning(f"⚠️ Không thể tải {path.name}: {type(exc).__name__}")
             return None
 
-    # Try to load imputer, but don't block if it fails
-    # (will use fallback SimpleImputer instead)
-    imputer = safe_load(MODELS_DIR / "water_imputer.pkl")
-    
-    scaler = safe_load(MODELS_DIR / "water_scaler.pkl")
     model = safe_load(MODELS_DIR / "water_rf_model_best.pkl")
     loaded_threshold = safe_load(MODELS_DIR / "optimal_threshold.pkl")
     
     if loaded_threshold is not None:
         threshold = loaded_threshold
 
-    return imputer, scaler, model, threshold
+    return model, threshold
 
 @st.cache_data
 def load_dataset():
@@ -141,7 +134,7 @@ def format_score(value: float) -> str:
 
 
 
-imputer, scaler, model, threshold = load_models()
+model, threshold = load_models()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Chọn trang:", ["EDA", "Model Deployment", "Evaluation"])
@@ -196,8 +189,8 @@ elif page == "Model Deployment":
     st.markdown("---")
     st.write("Nhập thông số nước để dự đoán chất lượng nước uống.")
 
-    if scaler is None or model is None:
-        st.error("❌ Mô hình hoặc bộ tiền xử lý chưa được tải. Kiểm tra thư mục `models/`.")
+    if model is None:
+        st.error("❌ Mô hình chưa được tải. Kiểm tra thư mục `models/`.")
     else:
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -228,13 +221,10 @@ elif page == "Model Deployment":
 
             try:
                 # Xử lý giá trị thiếu
-                input_data_imputed = impute_dataframe(input_data, imputer)
-                
-                # Chuẩn hóa dữ liệu
-                input_data_scaled = scaler.transform(input_data_imputed)
+                input_data_imputed = impute_dataframe(input_data, None)
                 
                 # Lấy xác suất dự đoán
-                probabilities = model.predict_proba(input_data_scaled)[:, 1]
+                probabilities = model.predict_proba(input_data_imputed)[:, 1]
                 
                 # Áp dụng ngưỡng tối ưu
                 prediction = (probabilities[0] >= threshold).astype(int)
@@ -262,15 +252,14 @@ elif page == "Model Deployment":
             except Exception as exc:
                 st.error(f"❌ Lỗi khi dự đoán: {exc}")
 
-        if imputer is None:
-            st.info("ℹ️ `water_imputer.pkl` chưa được tải, app sẽ sử dụng imputer mặc định khi cần xử lý giá trị thiếu.")
+
 
 elif page == "Evaluation":
     st.title("Evaluation")
     st.markdown("---")
 
-    if model is None or scaler is None:
-        st.error("❌ Không thể đánh giá vì mô hình hoặc bộ tiền xử lý chưa được tải.")
+    if model is None:
+        st.error("❌ Không thể đánh giá vì mô hình chưa được tải.")
     else:
         df = load_dataset()
         if df is None:
@@ -281,7 +270,7 @@ elif page == "Evaluation":
 
             X = df[FEATURE_COLUMNS].copy()
             y = df[TARGET_COLUMN].copy()
-            X = impute_dataframe(X, imputer)
+            X = impute_dataframe(X, None)
 
             X_train, X_test, y_train, y_test = train_test_split(
                 X,
@@ -291,8 +280,7 @@ elif page == "Evaluation":
                 stratify=y if len(y.unique()) > 1 else None,
             )
 
-            X_test_scaled = scaler.transform(X_test)
-            y_pred = model.predict(X_test_scaled)
+            y_pred = model.predict(X_test)
 
             st.subheader("Kết quả đánh giá")
             accuracy = accuracy_score(y_test, y_pred)
@@ -321,6 +309,3 @@ elif page == "Evaluation":
 
             st.subheader("Chi tiết báo cáo phân loại")
             st.dataframe(pd.DataFrame(report).transpose().round(4))
-
-            if imputer is None:
-                st.info("ℹ️ `water_imputer.pkl` không được tải. Đã dùng imputer mặc định cho dữ liệu đánh giá.")
