@@ -129,7 +129,7 @@ if page == "EDA":
 
     st.markdown(
         """
-        **Tên đề tài:"" Dự đoán nước an toàn dựa trên các chỉ số lý hóa bằng thuật toán RandomForest nhằm tối ưu hóa quy trình kiểm định chất lượng nước tại nguồn
+        **Tên đề tài:** Dự đoán nước an toàn dựa trên các chỉ số lý hóa bằng thuật toán RandomForest nhằm tối ưu hóa quy trình kiểm định chất lượng nước tại nguồn
         **Sinh viên:** Hồ Trọng Nghĩa 
         **MSSV:** 22T1020683  
         **Giá trị thực tiễn:** Đưa ra cảnh báo sớm để tạm dừng cấp nước hoặc sục rửa hệ thống ngay khi phát hiện dấu hiệu bất thường, ngăn ngừa dịch bệnh tiêu hóa.
