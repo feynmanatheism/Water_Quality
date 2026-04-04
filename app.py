@@ -23,9 +23,17 @@ models_dir = Path("models")
 @st.cache_resource
 def load_models():
     try:
-        imputer = joblib.load(models_dir / "water_imputer.pkl")
         scaler = joblib.load(models_dir / "water_scaler.pkl")
         model = joblib.load(models_dir / "water_rf_model.pkl")
+        
+        # Cố gắng load imputer, nếu lỗi thì tạo mới
+        try:
+            imputer = joblib.load(models_dir / "water_imputer.pkl")
+        except Exception as imputer_error:
+            st.warning(f"⚠️ Không thể load imputer, sẽ tạo mới. Lỗi: {str(imputer_error)[:50]}")
+            from sklearn.impute import SimpleImputer
+            imputer = SimpleImputer(strategy='mean')
+        
         return imputer, scaler, model
     except FileNotFoundError as e:
         st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
