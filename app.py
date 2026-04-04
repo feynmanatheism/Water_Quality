@@ -21,15 +21,23 @@ models_dir = Path("models")
 @st.cache_resource
 def load_models():
     try:
+        # Thử load với encoding để tương thích nhiều Python version
         with open(models_dir / "water_imputer.pkl", "rb") as f:
-            imputer = pickle.load(f)
+            imputer = pickle.load(f, encoding='latin1')
         with open(models_dir / "water_scaler.pkl", "rb") as f:
-            scaler = pickle.load(f)
+            scaler = pickle.load(f, encoding='latin1')
         with open(models_dir / "water_rf_model.pkl", "rb") as f:
-            model = pickle.load(f)
+            model = pickle.load(f, encoding='latin1')
         return imputer, scaler, model
     except FileNotFoundError as e:
         st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
+        st.error(f"📁 Đường dẫn cần: {models_dir}")
+        return None, None, None
+    except Exception as e:
+        st.error(f"❌ Lỗi khi load mô hình: {str(e)}")
+        st.error("💡 **Giải pháp:**")
+        st.error("- File pickle có thể không tương thích với Python version")
+        st.error("- Vui lòng tạo lại pickle bằng: `pickle.dump(model, f, protocol=2)`")
         return None, None, None
 
 imputer, scaler, model = load_models()
