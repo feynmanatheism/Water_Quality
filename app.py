@@ -23,22 +23,20 @@ models_dir = Path("models")
 @st.cache_resource
 def load_models():
     try:
+        imputer = joblib.load(models_dir / "water_imputer.pkl")
         scaler = joblib.load(models_dir / "water_scaler.pkl")
         model = joblib.load(models_dir / "water_rf_model.pkl")
         
-        # ⚠️ KHÔNG load imputer - nó bị lỗi version incompatibility
-        # Vì user input từ st.number_input đã đầy đủ, không có missing values
-        
-        return scaler, model
+        return imputer, scaler, model
     except FileNotFoundError as e:
         st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
         st.error(f"📁 Đường dẫn cần: {models_dir}")
-        return None, None
+        return None, None, None
     except Exception as e:
         st.error(f"❌ Lỗi khi load mô hình: {str(e)}")
-        return None, None
+        return None, None, None
 
-scaler, model = load_models()
+imputer, scaler, model = load_models()
 
 # Sidebar
 st.sidebar.title("Navigation")
@@ -59,7 +57,7 @@ if page == "Home":
     """)
     
 elif page == "Prediction":
-    if model is None:
+    if model is None or scaler is None or imputer is None:
         st.error("❌ Không thể tải mô hình. Vui lòng kiểm tra file trong thư mục models/.")
     else:
         st.header("🔮 Dự đoán chất lượng nước")
@@ -98,9 +96,12 @@ elif page == "Prediction":
             })
             
             try:
-                # ⚠️ KHÔNG impute - dữ liệu từ st.number_input đã đầy đủ, không có missing values
-                # Chỉ cần scale & predict
-                input_scaled = scaler.transform(input_data)
+                # Xử lý dữ liệu: Impute → Scale → Predict
+                input_imputed = pd.DataFrame(
+                    imputer.transform(input_data),
+                    columns=input_data.columns
+                )
+                input_scaled = scaler.transform(input_imputed)
                 
                 # Dự đoán
                 prediction = model.predict(input_scaled)[0]
