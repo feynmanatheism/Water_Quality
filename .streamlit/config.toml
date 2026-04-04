@@ -1,8 +1,8 @@
 [client]
-showErrorDetails = true
+showErrorDetails = false
 
 [logger]
-level = "debug"
+level = "error"
 
 [theme]
 primaryColor = "#1f77b4"
