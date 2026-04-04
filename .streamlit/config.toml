@@ -2,7 +2,7 @@
 showErrorDetails = true
 
 [logger]
-level = "debug"
+level = "warning"
 
 [theme]
 primaryColor = "#1f77b4"
