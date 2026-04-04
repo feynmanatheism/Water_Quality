@@ -19,8 +19,8 @@ warnings.filterwarnings('ignore')
 
 st.set_page_config(page_title="Water Quality Prediction", layout="wide")
 
-PROJECT_TITLE = "Dự báo chất lượng nước uống cho khu vực đô thị"
-PROJECT_AUTHOR = "Nguyễn Việt Cường - 20521137"
+PROJECT_TITLE = "Dự đoán nước an toàn dựa trên các chỉ số lý hóa bằng thuật toán RandomForest nhằm tối ưu hóa quy trình kiểm định chất lượng nước tại nguồn"
+PROJECT_AUTHOR = "Hồ Trọng Nghĩa. - 22T1020683"
 MODELS_DIR = Path("models")
 DATA_FILE = Path("data/water_potability.csv")
 FEATURE_COLUMNS = [
