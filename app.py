@@ -31,8 +31,11 @@ TARGET_COLUMN = 'Potability'
 
 
 def patch_legacy_numpy_pickle():
+    """Patch numpy module references to support loading pickles from older numpy versions."""
     try:
         import numpy as np
+        
+        # Alias legacy numpy._core to numpy.core
         if 'numpy._core' not in sys.modules:
             sys.modules['numpy._core'] = importlib.import_module('numpy.core')
         if 'numpy._core.multiarray' not in sys.modules:
@@ -40,10 +43,21 @@ def patch_legacy_numpy_pickle():
         if 'numpy._core._multiarray_umath' not in sys.modules:
             sys.modules['numpy._core._multiarray_umath'] = importlib.import_module('numpy.core._multiarray_umath')
 
+        # Ensure numpy.random._mt19937 is importable as a fallback
+        try:
+            sys.modules['numpy.random._mt19937']
+        except (KeyError, AttributeError):
+            try:
+                sys.modules['numpy.random._mt19937'] = importlib.import_module('numpy.random._mt19937')
+            except Exception:
+                pass
+
+        # Patch numpy.random._pickle constructors to handle class objects
         try:
             import numpy.random._pickle as nrp
 
             def make_safe(original):
+                """Wrap constructor to handle both string names and class objects."""
                 def wrapper(bit_generator_name='MT19937'):
                     if not isinstance(bit_generator_name, str):
                         try:
@@ -51,7 +65,6 @@ def patch_legacy_numpy_pickle():
                         except Exception:
                             bit_generator_name = str(bit_generator_name)
                     return original(bit_generator_name)
-
                 return wrapper
 
             for name in ('__bit_generator_ctor', '__generator_ctor', '__randomstate_ctor'):
@@ -76,12 +89,16 @@ def load_models():
 
     def safe_load(path):
         try:
-            return joblib.load(path)
+            obj = joblib.load(path)
+            return obj
         except Exception as exc:
-            st.warning(f"⚠️ Không thể tải {path.name}: {exc}")
+            st.warning(f"⚠️ Không thể tải {path.name}: {type(exc).__name__}")
             return None
 
+    # Try to load imputer, but don't block if it fails
+    # (will use fallback SimpleImputer instead)
     imputer = safe_load(MODELS_DIR / "water_imputer.pkl")
+    
     scaler = safe_load(MODELS_DIR / "water_scaler.pkl")
     model = safe_load(MODELS_DIR / "water_rf_model.pkl")
 
