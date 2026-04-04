@@ -26,13 +26,11 @@ def load_models():
         scaler = joblib.load(models_dir / "water_scaler.pkl")
         model = joblib.load(models_dir / "water_rf_model.pkl")
         
-        # Cố gắng load imputer, nếu lỗi thì tạo mới
+        # Cố gắng load imputer, nếu lỗi thì để None (tạo input đầy đủ nên không cần)
         try:
             imputer = joblib.load(models_dir / "water_imputer.pkl")
         except Exception as imputer_error:
-            st.warning(f"⚠️ Không thể load imputer, sẽ tạo mới. Lỗi: {str(imputer_error)[:50]}")
-            from sklearn.impute import SimpleImputer
-            imputer = SimpleImputer(strategy='mean')
+            imputer = None
         
         return imputer, scaler, model
     except FileNotFoundError as e:
@@ -104,7 +102,12 @@ elif page == "Prediction":
             
             try:
                 # Xử lý dữ liệu - chỉ transform (không fit)
-                input_imputed = imputer.transform(input_data)
+                # Nếu imputer có thể load, sử dụng; nếu không, bỏ qua (user input đầy đủ)
+                if imputer is not None:
+                    input_imputed = imputer.transform(input_data)
+                else:
+                    input_imputed = input_data.values
+                
                 input_scaled = scaler.transform(input_imputed)
                 
                 # Dự đoán
