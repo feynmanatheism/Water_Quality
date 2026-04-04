@@ -70,53 +70,71 @@ elif page == "Prediction":
         st.header("🔮 Dự đoán chất lượng nước")
         st.write("Nhập thông số nước của bạn:")
         
-        col1, col2 = st.columns(2)
+        # Tạo 3 cột input
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
-            ph = st.slider("pH", 0.0, 14.0, 7.0, step=0.1)
-            temperature = st.slider("Temperature (°C)", 0.0, 50.0, 25.0, step=0.5)
+            ph = st.number_input("pH", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+            hardness = st.number_input("Hardness", min_value=0.0, max_value=500.0, value=200.0, step=1.0)
+            solids = st.number_input("Solids", min_value=0.0, max_value=50000.0, value=20000.0, step=100.0)
         
         with col2:
-            dissolved_oxygen = st.slider("Dissolved Oxygen (mg/L)", 0.0, 15.0, 8.0, step=0.1)
-            turbidity = st.slider("Turbidity (NTU)", 0.0, 100.0, 5.0, step=0.5)
+            chloramines = st.number_input("Chloramines", min_value=0.0, max_value=15.0, value=7.0, step=0.1)
+            sulfate = st.number_input("Sulfate", min_value=0.0, max_value=500.0, value=350.0, step=1.0)
+            conductivity = st.number_input("Conductivity", min_value=0.0, max_value=1000.0, value=400.0, step=1.0)
+        
+        with col3:
+            organic_carbon = st.number_input("Organic_carbon", min_value=0.0, max_value=30.0, value=15.0, step=0.1)
+            trihalomethanes = st.number_input("Trihalomethanes", min_value=0.0, max_value=150.0, value=65.0, step=1.0)
+            turbidity = st.number_input("Turbidity", min_value=0.0, max_value=10.0, value=3.5, step=0.1)
         
         if st.button("🎯 Dự đoán", key="predict_btn"):
-            # Tạo dataframe từ input
+            # Tạo dataframe với đúng tên cột từ training (9 tính năng)
             input_data = pd.DataFrame({
                 'ph': [ph],
-                'Tempreture': [temperature],  # Giữ nguyên tên cột nếu model dùng tên này
-                'Dissolved_oxygen': [dissolved_oxygen],
+                'Hardness': [hardness],
+                'Solids': [solids],
+                'Chloramines': [chloramines],
+                'Sulfate': [sulfate],
+                'Conductivity': [conductivity],
+                'Organic_carbon': [organic_carbon],
+                'Trihalomethanes': [trihalomethanes],
                 'Turbidity': [turbidity]
             })
             
-            # Xử lý dữ liệu
-            input_imputed = imputer.transform(input_data)
-            input_scaled = scaler.transform(input_imputed)
-            
-            # Dự đoán
-            prediction = model.predict(input_scaled)[0]
-            probability = model.predict_proba(input_scaled)[0]
-            
-            # Hiển thị kết quả
-            st.markdown("---")
-            st.subheader("📊 Kết quả dự đoán:")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if prediction == 1:
-                    st.success("✅ **Chất lượng: TỐT (Sạch)**")
-                else:
-                    st.error("❌ **Chất lượng: XẤU (Không sạch)**")
-            
-            with col2:
-                st.metric("Độ tin cậy", f"{max(probability) * 100:.2f}%")
-            
-            # Chi tiết xác suất
-            st.write("**Xác suất chi tiết:**")
-            prob_df = pd.DataFrame({
-                'Chất lượng': ['Sạch', 'Không sạch'],
-                'Xác suất (%)': [probability[1] * 100, probability[0] * 100]
-            })
-            st.bar_chart(prob_df.set_index('Chất lượng'))
+            try:
+                # Xử lý dữ liệu - chỉ transform (không fit)
+                input_imputed = imputer.transform(input_data)
+                input_scaled = scaler.transform(input_imputed)
+                
+                # Dự đoán
+                prediction = model.predict(input_scaled)[0]
+                probability = model.predict_proba(input_scaled)[0]
+                
+                # Hiển thị kết quả
+                st.markdown("---")
+                st.subheader("📊 Kết quả dự đoán:")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if prediction == 1:
+                        st.success("✅ **Chất lượng: TỐT (Sạch)**")
+                    else:
+                        st.error("❌ **Chất lượng: XẤU (Không sạch)**")
+                
+                with col2:
+                    st.metric("Độ tin cậy", f"{max(probability) * 100:.2f}%")
+                
+                # Chi tiết xác suất
+                st.write("**Xác suất chi tiết:**")
+                prob_df = pd.DataFrame({
+                    'Chất lượng': ['Sạch', 'Không sạch'],
+                    'Xác suất (%)': [probability[1] * 100, probability[0] * 100]
+                })
+                st.bar_chart(prob_df.set_index('Chất lượng'))
+                
+            except Exception as e:
+                st.error(f"❌ Lỗi khi dự đoán: {str(e)}")
 
 elif page == "Analysis":
     st.header("📊 Phân tích dữ liệu")
