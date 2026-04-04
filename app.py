@@ -1,6 +1,8 @@
 import importlib
+import io
 import sys
 import warnings
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import joblib
@@ -134,7 +136,9 @@ def format_score(value: float) -> str:
 
 
 
-model, threshold = load_models()
+# Suppress debug output when loading models
+with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+    model, threshold = load_models()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Chọn trang:", ["EDA", "Model Deployment", "Evaluation"])
