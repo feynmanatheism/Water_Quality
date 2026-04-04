@@ -1,11 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from pathlib import Path
+import warnings
+warnings.filterwarnings('ignore')
 
 # Cấu hình trang
 st.set_page_config(page_title="Water Quality Prediction", layout="wide")
@@ -17,17 +19,13 @@ st.markdown("---")
 # Đường dẫn thư mục models
 models_dir = Path("models")
 
-# Load các mô hình
+# Load các mô hình bằng joblib (tương thích scikit-learn tốt hơn)
 @st.cache_resource
 def load_models():
     try:
-        # Thử load với encoding để tương thích nhiều Python version
-        with open(models_dir / "water_imputer.pkl", "rb") as f:
-            imputer = pickle.load(f, encoding='latin1')
-        with open(models_dir / "water_scaler.pkl", "rb") as f:
-            scaler = pickle.load(f, encoding='latin1')
-        with open(models_dir / "water_rf_model.pkl", "rb") as f:
-            model = pickle.load(f, encoding='latin1')
+        imputer = joblib.load(models_dir / "water_imputer.pkl")
+        scaler = joblib.load(models_dir / "water_scaler.pkl")
+        model = joblib.load(models_dir / "water_rf_model.pkl")
         return imputer, scaler, model
     except FileNotFoundError as e:
         st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
@@ -35,9 +33,6 @@ def load_models():
         return None, None, None
     except Exception as e:
         st.error(f"❌ Lỗi khi load mô hình: {str(e)}")
-        st.error("💡 **Giải pháp:**")
-        st.error("- File pickle có thể không tương thích với Python version")
-        st.error("- Vui lòng tạo lại pickle bằng: `pickle.dump(model, f, protocol=2)`")
         return None, None, None
 
 imputer, scaler, model = load_models()
