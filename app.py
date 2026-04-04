@@ -129,12 +129,12 @@ if page == "EDA":
 
     st.markdown(
         """
-        **Sinh viên:** Nguyễn Việt Cường - 20521137  
-        **Môn học:** Học máy / Phân tích dữ liệu  
-        **Mục tiêu:** Xây dựng hệ thống dự đoán chất lượng nước uống bằng mô hình học máy.
+        **Tên đề tài:"" Dự đoán nước an toàn dựa trên các chỉ số lý hóa bằng thuật toán RandomForest nhằm tối ưu hóa quy trình kiểm định chất lượng nước tại nguồn
+        **Sinh viên:** Hồ Trọng Nghĩa 
+        **MSSV:** 22T1020683  
+        **Giá trị thực tiễn:** Đưa ra cảnh báo sớm để tạm dừng cấp nước hoặc sục rửa hệ thống ngay khi phát hiện dấu hiệu bất thường, ngăn ngừa dịch bệnh tiêu hóa.
         """
     )
-
     df = load_dataset()
     if df is None:
         st.warning("⚠️ Không tìm thấy dữ liệu mẫu. Vui lòng thêm file `data/water_potability.csv`.")
