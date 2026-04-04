@@ -83,9 +83,11 @@ def load_models():
     imputer = None
     scaler = None
     model = None
+    threshold = 0.5  # Ngưỡng mặc định
+    
     if not MODELS_DIR.exists():
         st.error(f"❌ Không tìm thấy thư mục mô hình: {MODELS_DIR}")
-        return None, None, None
+        return None, None, None, threshold
 
     def safe_load(path):
         try:
@@ -100,10 +102,13 @@ def load_models():
     imputer = safe_load(MODELS_DIR / "water_imputer.pkl")
     
     scaler = safe_load(MODELS_DIR / "water_scaler.pkl")
-    model = safe_load(MODELS_DIR / "water_rf_model.pkl")
+    model = safe_load(MODELS_DIR / "water_rf_model_best.pkl")
+    loaded_threshold = safe_load(MODELS_DIR / "optimal_threshold.pkl")
+    
+    if loaded_threshold is not None:
+        threshold = loaded_threshold
 
-    return imputer, scaler, model
-
+    return imputer, scaler, model, threshold
 
 @st.cache_data
 def load_dataset():
@@ -135,7 +140,8 @@ def format_score(value: float) -> str:
     return f"{value * 100:.2f}%"
 
 
-imputer, scaler, model = load_models()
+
+imputer, scaler, model, threshold = load_models()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Chọn trang:", ["EDA", "Model Deployment", "Evaluation"])
@@ -220,29 +226,39 @@ elif page == "Model Deployment":
                 'Turbidity': [turbidity]
             })
 
-            if input_data.isna().any().any():
-                input_prepared = impute_dataframe(input_data, imputer)
-            else:
-                input_prepared = input_data
-
             try:
-                input_scaled = scaler.transform(input_prepared)
-                prediction = model.predict(input_scaled)[0]
-                probability = model.predict_proba(input_scaled)[0]
-
+                # Xử lý giá trị thiếu
+                input_data_imputed = impute_dataframe(input_data, imputer)
+                
+                # Chuẩn hóa dữ liệu
+                input_data_scaled = scaler.transform(input_data_imputed)
+                
+                # Lấy xác suất dự đoán
+                probabilities = model.predict_proba(input_data_scaled)[:, 1]
+                
+                # Áp dụng ngưỡng tối ưu
+                prediction = (probabilities[0] >= threshold).astype(int)
+                
+                # Hiển thị kết quả
+                st.markdown("---")
                 st.subheader("📊 Kết quả dự đoán")
-                if prediction == 1:
-                    st.success("✅ Chất lượng nước: TỐT (Sạch)")
-                else:
-                    st.error("❌ Chất lượng nước: XẤU (Không sạch)")
-
-                st.metric("Xác suất dự đoán", format_score(max(probability)))
-
-                prob_df = pd.DataFrame({
-                    'Chất lượng': ['Không sạch', 'Sạch'],
-                    'Xác suất (%)': [probability[0] * 100, probability[1] * 100]
-                })
-                st.bar_chart(prob_df.set_index('Chất lượng'))
+                
+                col_result1, col_result2 = st.columns(2)
+                
+                with col_result1:
+                    st.metric("Độ tin cậy", f"{probabilities[0]*100:.2f}%")
+                    st.metric("Ngưỡng quyết định", f"{threshold*100:.2f}%")
+                
+                with col_result2:
+                    if prediction == 1:
+                        st.success(f"✅ **NƯỚC AN TOÀN**\nĐủ tiêu chuẩn uống")
+                    else:
+                        st.error(f"❌ **NƯỚC KHÔNG AN TOÀN**\nKhông đủ tiêu chuẩn uống")
+                
+                # Hiển thị chi tiết thông số
+                st.subheader("📋 Thông số đầu vào")
+                st.dataframe(input_data)
+                
             except Exception as exc:
                 st.error(f"❌ Lỗi khi dự đoán: {exc}")
 
