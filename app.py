@@ -1,88 +1,196 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
+import importlib
+import sys
+import warnings
+from pathlib import Path
+
 import joblib
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
-import os
-from pathlib import Path
-import warnings
+import streamlit as st
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, f1_score, precision_score,
+                             recall_score)
+from sklearn.model_selection import train_test_split
+
 warnings.filterwarnings('ignore')
 
-# Cấu hình trang
 st.set_page_config(page_title="Water Quality Prediction", layout="wide")
 
-# Tiêu đề
-st.title("🌊 Water Quality Prediction System")
-st.markdown("---")
+PROJECT_TITLE = "Dự báo chất lượng nước uống cho khu vực đô thị"
+PROJECT_AUTHOR = "Nguyễn Việt Cường - 20521137"
+MODELS_DIR = Path("models")
+DATA_FILE = Path("data/water_potability.csv")
+FEATURE_COLUMNS = [
+    'ph', 'Hardness', 'Solids', 'Chloramines', 'Sulfate',
+    'Conductivity', 'Organic_carbon', 'Trihalomethanes', 'Turbidity'
+]
+TARGET_COLUMN = 'Potability'
 
-# Đường dẫn thư mục models
-models_dir = Path("models")
 
-# Load các mô hình bằng joblib (tương thích scikit-learn tốt hơn)
+def patch_legacy_numpy_pickle():
+    try:
+        import numpy as np
+        if 'numpy._core' not in sys.modules:
+            sys.modules['numpy._core'] = importlib.import_module('numpy.core')
+        if 'numpy._core.multiarray' not in sys.modules:
+            sys.modules['numpy._core.multiarray'] = importlib.import_module('numpy.core.multiarray')
+        if 'numpy._core._multiarray_umath' not in sys.modules:
+            sys.modules['numpy._core._multiarray_umath'] = importlib.import_module('numpy.core._multiarray_umath')
+
+        try:
+            import numpy.random._pickle as nrp
+
+            def make_safe(original):
+                def wrapper(bit_generator_name='MT19937'):
+                    if not isinstance(bit_generator_name, str):
+                        try:
+                            bit_generator_name = bit_generator_name.__name__
+                        except Exception:
+                            bit_generator_name = str(bit_generator_name)
+                    return original(bit_generator_name)
+
+                return wrapper
+
+            for name in ('__bit_generator_ctor', '__generator_ctor', '__randomstate_ctor'):
+                if hasattr(nrp, name):
+                    setattr(nrp, name, make_safe(getattr(nrp, name)))
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
 @st.cache_resource
 def load_models():
-    try:
-        imputer = joblib.load(models_dir / "water_imputer.pkl")
-        scaler = joblib.load(models_dir / "water_scaler.pkl")
-        model = joblib.load(models_dir / "water_rf_model.pkl")
-        
-        return imputer, scaler, model
-    except FileNotFoundError as e:
-        st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
-        st.error(f"📁 Đường dẫn cần: {models_dir}")
+    patch_legacy_numpy_pickle()
+
+    imputer = None
+    scaler = None
+    model = None
+    if not MODELS_DIR.exists():
+        st.error(f"❌ Không tìm thấy thư mục mô hình: {MODELS_DIR}")
         return None, None, None
-    except Exception as e:
-        st.error(f"❌ Lỗi khi load mô hình: {str(e)}")
-        return None, None, None
+
+    def safe_load(path):
+        try:
+            return joblib.load(path)
+        except Exception as exc:
+            st.warning(f"⚠️ Không thể tải {path.name}: {exc}")
+            return None
+
+    imputer = safe_load(MODELS_DIR / "water_imputer.pkl")
+    scaler = safe_load(MODELS_DIR / "water_scaler.pkl")
+    model = safe_load(MODELS_DIR / "water_rf_model.pkl")
+
+    return imputer, scaler, model
+
+
+@st.cache_data
+def load_dataset():
+    if not DATA_FILE.exists():
+        return None
+
+    df = pd.read_csv(DATA_FILE, na_values=['', 'NA', 'NaN'])
+    if TARGET_COLUMN not in df.columns:
+        return None
+
+    return df
+
+
+def impute_dataframe(df, imputer_obj=None):
+    if not df.isna().any().any():
+        return df
+
+    if imputer_obj is not None:
+        try:
+            return pd.DataFrame(imputer_obj.transform(df), columns=df.columns)
+        except Exception:
+            pass
+
+    fallback = SimpleImputer(strategy='mean')
+    return pd.DataFrame(fallback.fit_transform(df), columns=df.columns)
+
+
+def format_score(value: float) -> str:
+    return f"{value * 100:.2f}%"
+
 
 imputer, scaler, model = load_models()
 
-# Sidebar
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Chọn trang:", ["Home", "Prediction", "Analysis"])
+page = st.sidebar.radio("Chọn trang:", ["EDA", "Model Deployment", "Evaluation"])
 
-if page == "Home":
-    st.header("Welcome to Water Quality Prediction!")
-    st.write("""
-    Hệ thống này được xây dựng để dự đoán chất lượng nước dựa trên các thông số không khí và hoá học.
-    
-    **Thông số đầu vào:**
-    - pH: Độ axit hoặc kiềm của nước
-    - Nhiệt độ (Temperature): Độ nóng của nước (°C)
-    - Oxy hòa tan (Dissolved Oxygen): Lượng oxy trong nước (mg/L)
-    - Độ đục (Turbidity): Độ mờ của nước (NTU)
-    
-    Sử dụng tab "Prediction" để dự đoán chất lượng nước.
-    """)
-    
-elif page == "Prediction":
-    if model is None or scaler is None or imputer is None:
-        st.error("❌ Không thể tải mô hình. Vui lòng kiểm tra file trong thư mục models/.")
+if page == "EDA":
+    st.title(PROJECT_TITLE)
+    st.markdown("---")
+
+    st.markdown(
+        """
+        **Sinh viên:** Nguyễn Việt Cường - 20521137  
+        **Môn học:** Học máy / Phân tích dữ liệu  
+        **Mục tiêu:** Xây dựng hệ thống dự đoán chất lượng nước uống bằng mô hình học máy.
+        """
+    )
+
+    df = load_dataset()
+    if df is None:
+        st.warning("⚠️ Không tìm thấy dữ liệu mẫu. Vui lòng thêm file `data/water_potability.csv`.")
     else:
-        st.header("🔮 Dự đoán chất lượng nước")
-        st.write("Nhập thông số nước của bạn:")
-        
-        # Tạo 3 cột input
+        st.subheader("Tổng quan tập dữ liệu")
+        st.write(f"- Số lượng bản ghi: **{len(df)}**")
+        st.write(f"- Số lượng cột: **{len(df.columns)}**")
+
+        missing = df.isna().sum()
+        st.write("**Giá trị thiếu theo cột:**")
+        st.dataframe(missing[missing > 0].to_frame("Missing Count"))
+
+        st.subheader("Biểu đồ phân bố dữ liệu")
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        selected_col = st.selectbox("Chọn cột để xem thống kê:", numeric_cols)
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        df[selected_col].hist(bins=30, ax=ax, edgecolor='black', color='skyblue')
+        ax.set_xlabel(selected_col)
+        ax.set_ylabel("Tần suất")
+        ax.set_title(f"Phân bố {selected_col}")
+        st.pyplot(fig)
+
+        st.subheader("Ma trận tương quan")
+        corr = df[numeric_cols].corr()
+        fig2, ax2 = plt.subplots(figsize=(10, 8))
+        sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', ax=ax2)
+        ax2.set_title("Heatmap tương quan giữa các biến")
+        st.pyplot(fig2)
+
+        if st.checkbox("Xem mẫu dữ liệu" ):
+            st.dataframe(df.head(10))
+
+elif page == "Model Deployment":
+    st.title("Model Deployment")
+    st.markdown("---")
+    st.write("Nhập thông số nước để dự đoán chất lượng nước uống.")
+
+    if scaler is None or model is None:
+        st.error("❌ Mô hình hoặc bộ tiền xử lý chưa được tải. Kiểm tra thư mục `models/`.")
+    else:
         col1, col2, col3 = st.columns(3)
-        
         with col1:
             ph = st.number_input("pH", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
             hardness = st.number_input("Hardness", min_value=0.0, max_value=500.0, value=200.0, step=1.0)
             solids = st.number_input("Solids", min_value=0.0, max_value=50000.0, value=20000.0, step=100.0)
-        
         with col2:
             chloramines = st.number_input("Chloramines", min_value=0.0, max_value=15.0, value=7.0, step=0.1)
             sulfate = st.number_input("Sulfate", min_value=0.0, max_value=500.0, value=350.0, step=1.0)
             conductivity = st.number_input("Conductivity", min_value=0.0, max_value=1000.0, value=400.0, step=1.0)
-        
         with col3:
             organic_carbon = st.number_input("Organic_carbon", min_value=0.0, max_value=30.0, value=15.0, step=0.1)
             trihalomethanes = st.number_input("Trihalomethanes", min_value=0.0, max_value=150.0, value=65.0, step=1.0)
             turbidity = st.number_input("Turbidity", min_value=0.0, max_value=10.0, value=3.5, step=0.1)
-        
-        if st.button("🎯 Dự đoán", key="predict_btn"):
-            # Tạo dataframe với đúng tên cột từ training (9 tính năng)
+
+        if st.button("🎯 Dự đoán"):
             input_data = pd.DataFrame({
                 'ph': [ph],
                 'Hardness': [hardness],
@@ -94,77 +202,92 @@ elif page == "Prediction":
                 'Trihalomethanes': [trihalomethanes],
                 'Turbidity': [turbidity]
             })
-            
+
+            if input_data.isna().any().any():
+                input_prepared = impute_dataframe(input_data, imputer)
+            else:
+                input_prepared = input_data
+
             try:
-                # Xử lý dữ liệu: Impute → Scale → Predict
-                input_imputed = pd.DataFrame(
-                    imputer.transform(input_data),
-                    columns=input_data.columns
-                )
-                input_scaled = scaler.transform(input_imputed)
-                
-                # Dự đoán
+                input_scaled = scaler.transform(input_prepared)
                 prediction = model.predict(input_scaled)[0]
                 probability = model.predict_proba(input_scaled)[0]
-                
-                # Hiển thị kết quả
-                st.markdown("---")
-                st.subheader("📊 Kết quả dự đoán:")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    if prediction == 1:
-                        st.success("✅ **Chất lượng: TỐT (Sạch)**")
-                    else:
-                        st.error("❌ **Chất lượng: XẤU (Không sạch)**")
-                
-                with col2:
-                    st.metric("Độ tin cậy", f"{max(probability) * 100:.2f}%")
-                
-                # Chi tiết xác suất
-                st.write("**Xác suất chi tiết:**")
+
+                st.subheader("📊 Kết quả dự đoán")
+                if prediction == 1:
+                    st.success("✅ Chất lượng nước: TỐT (Sạch)")
+                else:
+                    st.error("❌ Chất lượng nước: XẤU (Không sạch)")
+
+                st.metric("Xác suất dự đoán", format_score(max(probability)))
+
                 prob_df = pd.DataFrame({
-                    'Chất lượng': ['Sạch', 'Không sạch'],
-                    'Xác suất (%)': [probability[1] * 100, probability[0] * 100]
+                    'Chất lượng': ['Không sạch', 'Sạch'],
+                    'Xác suất (%)': [probability[0] * 100, probability[1] * 100]
                 })
                 st.bar_chart(prob_df.set_index('Chất lượng'))
-                
-            except Exception as e:
-                st.error(f"❌ Lỗi khi dự đoán: {str(e)}")
+            except Exception as exc:
+                st.error(f"❌ Lỗi khi dự đoán: {exc}")
 
-elif page == "Analysis":
-    st.header("📊 Phân tích dữ liệu")
-    
-    data_file = Path("data/water_potability.csv")
-    if data_file.exists():
-        try:
-            df = pd.read_csv(data_file)
-            
-            st.write(f"**Số dòng dữ liệu:** {len(df)}")
-            st.write(f"**Số cột:** {len(df.columns)}")
-            
-            # Hiển thị thông tin cơ bản
-            st.subheader("Mô tả dữ liệu:")
-            st.dataframe(df.describe())
-            
-            # Biểu đồ phân bố
-            st.subheader("📈 Phân bố dữ liệu:")
-            numeric_cols = df.select_dtypes(include=[np.number]).columns
-            
-            selected_col = st.selectbox("Chọn cột để xem biểu đồ:", numeric_cols)
-            
-            fig, ax = plt.subplots(figsize=(10, 5))
-            df[selected_col].hist(bins=30, ax=ax, edgecolor='black', color='skyblue')
-            ax.set_xlabel(selected_col)
-            ax.set_ylabel("Tần suất")
-            ax.set_title(f"Phân bố {selected_col}")
-            st.pyplot(fig)
-            
-            # Hiển thị dữ liệu
-            if st.checkbox("Xem dữ liệu thô"):
-                st.dataframe(df.head(100))
-                
-        except Exception as e:
-            st.error(f"❌ Lỗi khi đọc file: {e}")
+        if imputer is None:
+            st.info("ℹ️ `water_imputer.pkl` chưa được tải, app sẽ sử dụng imputer mặc định khi cần xử lý giá trị thiếu.")
+
+elif page == "Evaluation":
+    st.title("Evaluation")
+    st.markdown("---")
+
+    if model is None or scaler is None:
+        st.error("❌ Không thể đánh giá vì mô hình hoặc bộ tiền xử lý chưa được tải.")
     else:
-        st.warning(f"⚠️ Không tìm thấy file {data_file}. Vui lòng đặt file CSV vào thư mục data/")
+        df = load_dataset()
+        if df is None:
+            st.warning("⚠️ Dữ liệu đánh giá chưa có. Vui lòng thêm file `data/water_potability.csv`.")
+        else:
+            st.subheader("Chuẩn bị dữ liệu đánh giá")
+            st.write("Dữ liệu sẽ được impute nếu tồn tại giá trị thiếu và chuẩn hóa bằng scaler.")
+
+            X = df[FEATURE_COLUMNS].copy()
+            y = df[TARGET_COLUMN].copy()
+            X = impute_dataframe(X, imputer)
+
+            X_train, X_test, y_train, y_test = train_test_split(
+                X,
+                y,
+                test_size=0.2,
+                random_state=42,
+                stratify=y if len(y.unique()) > 1 else None,
+            )
+
+            X_test_scaled = scaler.transform(X_test)
+            y_pred = model.predict(X_test_scaled)
+
+            st.subheader("Kết quả đánh giá")
+            accuracy = accuracy_score(y_test, y_pred)
+            precision = precision_score(y_test, y_pred, zero_division=0)
+            recall = recall_score(y_test, y_pred, zero_division=0)
+            f1 = f1_score(y_test, y_pred, zero_division=0)
+            report = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
+
+            metrics_df = pd.DataFrame({
+                'Accuracy': [accuracy],
+                'Precision': [precision],
+                'Recall': [recall],
+                'F1 Score': [f1],
+            })
+            metrics_df = metrics_df.T.rename(columns={0: 'Value'})
+            st.dataframe(metrics_df.style.format('{:.4f}'))
+
+            st.subheader("Ma trận nhầm lẫn")
+            cm = confusion_matrix(y_test, y_pred)
+            cm_df = pd.DataFrame(cm, index=['Không sạch', 'Sạch'], columns=['Dự đoán Không sạch', 'Dự đoán Sạch'])
+            fig, ax = plt.subplots(figsize=(6, 4))
+            sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues', ax=ax)
+            ax.set_ylabel('Thực tế')
+            ax.set_xlabel('Dự đoán')
+            st.pyplot(fig)
+
+            st.subheader("Chi tiết báo cáo phân loại")
+            st.dataframe(pd.DataFrame(report).transpose().round(4))
+
+            if imputer is None:
+                st.info("ℹ️ `water_imputer.pkl` không được tải. Đã dùng imputer mặc định cho dữ liệu đánh giá.")
