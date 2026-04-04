@@ -26,22 +26,19 @@ def load_models():
         scaler = joblib.load(models_dir / "water_scaler.pkl")
         model = joblib.load(models_dir / "water_rf_model.pkl")
         
-        # Cố gắng load imputer, nếu lỗi thì để None (tạo input đầy đủ nên không cần)
-        try:
-            imputer = joblib.load(models_dir / "water_imputer.pkl")
-        except Exception as imputer_error:
-            imputer = None
+        # ⚠️ KHÔNG load imputer - nó bị lỗi version incompatibility
+        # Vì user input từ st.number_input đã đầy đủ, không có missing values
         
-        return imputer, scaler, model
+        return scaler, model
     except FileNotFoundError as e:
         st.error(f"❌ Lỗi: Không tìm thấy mô hình. {e}")
         st.error(f"📁 Đường dẫn cần: {models_dir}")
-        return None, None, None
+        return None, None
     except Exception as e:
         st.error(f"❌ Lỗi khi load mô hình: {str(e)}")
-        return None, None, None
+        return None, None
 
-imputer, scaler, model = load_models()
+scaler, model = load_models()
 
 # Sidebar
 st.sidebar.title("Navigation")
@@ -101,14 +98,9 @@ elif page == "Prediction":
             })
             
             try:
-                # Xử lý dữ liệu - chỉ transform (không fit)
-                # Nếu imputer có thể load, sử dụng; nếu không, bỏ qua (user input đầy đủ)
-                if imputer is not None:
-                    input_imputed = imputer.transform(input_data)
-                else:
-                    input_imputed = input_data.values
-                
-                input_scaled = scaler.transform(input_imputed)
+                # ⚠️ KHÔNG impute - dữ liệu từ st.number_input đã đầy đủ, không có missing values
+                # Chỉ cần scale & predict
+                input_scaled = scaler.transform(input_data)
                 
                 # Dự đoán
                 prediction = model.predict(input_scaled)[0]
