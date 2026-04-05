@@ -194,9 +194,11 @@ if page == "EDA":
                         labels=dict(x="Biến", y="Biến", color="Tương quan"),
                         x=corr.columns,
                         y=corr.columns,
-                        color_continuous_scale='coolwarm',
+                        color_continuous_scale='RdBu',
                         text_auto='.2f',
-                        aspect="auto")
+                        aspect="auto",
+                        zmin=-1,
+                        zmax=1)
         fig2.update_layout(
             coloraxis_colorbar=dict(
                 yanchor="bottom",
