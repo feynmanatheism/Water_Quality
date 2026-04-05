@@ -136,7 +136,11 @@ def format_score(value: float) -> str:
     return f"{value * 100:.2f}%"
 
 
-
+@st.cache_resource
+def plot_pairplot(data):
+    fig_pairplot = sns.pairplot(data, hue="Potability", height=2, aspect=1.5)
+    fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
+    return fig_pairplot.fig
 
 
 st.sidebar.title("Navigation")
@@ -220,9 +224,9 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
 
         st.subheader("3. Pair Plot")
         with st.spinner("Đang tạo biểu đồ Pair Plot... (có thể mất vài giây)"):
-            fig_pairplot = sns.pairplot(df, hue="Potability", height=2, aspect=1.5)
-            fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
-            st.pyplot(fig_pairplot.fig)
+            # Gọi hàm đã được gắn cache thay vì vẽ lại từ đầu
+            fig_pairplot_fig = plot_pairplot(df)
+            st.pyplot(fig_pairplot_fig)
         
         st.markdown("""
 **Nhận xét:**
