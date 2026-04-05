@@ -374,10 +374,19 @@ elif page == "Evaluation":
             st.warning("⚠️ Dữ liệu đánh giá chưa có. Vui lòng thêm file `data/water_potability.csv`.")
         else:
             st.subheader("1. Chuẩn bị dữ liệu đánh giá")
-            st.write("Dữ liệu sẽ được impute nếu tồn tại giá trị thiếu và phân chia thành tập Train/Test.")
+            st.write("Dữ liệu sẽ được điền khuyết theo giá trị trung bình của từng nhóm Potability, sau đó phân chia thành tập Train/Test.")
 
+            # ---------------------------------------------------------
+            # BƯỚC MỚI: ĐIỀN KHUYẾT DỮ LIỆU THEO NHÓM POTABILITY
+            # ---------------------------------------------------------
+            cols_to_fill = ['ph', 'Sulfate', 'Trihalomethanes']
+            df[cols_to_fill] = df.groupby('Potability')[cols_to_fill].transform(lambda x: x.fillna(x.mean()))
+
+            # Tách biến độc lập (X) và biến mục tiêu (y)
             X = df[FEATURE_COLUMNS].copy()
             y = df[TARGET_COLUMN].copy()
+            
+            # Impute tổng quát cho các cột khác nếu vẫn còn sót giá trị thiếu
             X = impute_dataframe(X, None)
 
             X_train, X_test, y_train, y_test = train_test_split(
@@ -406,10 +415,8 @@ elif page == "Evaluation":
             
             metrics_df = pd.DataFrame({
                 'PR-AUC': [pr_auc],
-                'Accuracy': [accuracy],
                 'Precision': [precision],
                 'Recall': [recall],
-                'F1 Score': [f1],
             })
             metrics_df = metrics_df.T.rename(columns={0: 'Value'})
             st.dataframe(metrics_df.style.format('{:.4f}'))
@@ -460,7 +467,3 @@ elif page == "Evaluation":
 * **Kiểm soát rủi ro cực thấp:** Ma trận nhầm lẫn cho thấy chỉ có **{cm[0, 1]}** mẫu nước bẩn bị nhận diện sai (False Positives). Đây là con số rất nhỏ, giúp hạn chế tối đa rủi ro gây hại cho sức khỏe người dùng.
 * **Sự đánh đổi tất yếu (Trade-off):** Để đạt mức độ an toàn cao, mô hình phải đánh đổi bằng độ bao phủ (Recall giảm còn **{recall*100:.1f}%**). Mô hình chấp nhận "chê nhầm" **{cm[1, 0]}** mẫu nước sạch (False Negatives) để đảm bảo không bỏ lọt nước bẩn.
             """)
-
-            st.markdown("---")
-            st.subheader("4. Chi tiết báo cáo phân loại (Classification Report)")
-            st.dataframe(pd.DataFrame(report).transpose().round(4))
