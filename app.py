@@ -204,6 +204,8 @@ if page == "EDA":
                         zmin=-1,
                         zmax=1)
         fig2.update_layout(
+            xaxis_tickfont_size=32,  # Thay đổi con số này cho trục X
+            yaxis_tickfont_size=32,  # Thay đổi con số này cho trục Y
             coloraxis_colorbar=dict(
                 yanchor="bottom",
                 y=0
