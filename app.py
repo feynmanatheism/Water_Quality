@@ -295,21 +295,27 @@ elif page == "Model Deployment":
     if model is None:
         st.error("❌ Mô hình chưa được tải. Kiểm tra thư mục `models/`.")
     else:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            ph = st.number_input("pH", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
-            hardness = st.number_input("Hardness", min_value=0.0, max_value=500.0, value=200.0, step=1.0)
-            solids = st.number_input("Solids", min_value=0.0, max_value=50000.0, value=20000.0, step=100.0)
-        with col2:
-            chloramines = st.number_input("Chloramines", min_value=0.0, max_value=15.0, value=7.0, step=0.1)
-            sulfate = st.number_input("Sulfate", min_value=0.0, max_value=500.0, value=350.0, step=1.0)
-            conductivity = st.number_input("Conductivity", min_value=0.0, max_value=1000.0, value=400.0, step=1.0)
-        with col3:
-            organic_carbon = st.number_input("Organic_carbon", min_value=0.0, max_value=30.0, value=15.0, step=0.1)
-            trihalomethanes = st.number_input("Trihalomethanes", min_value=0.0, max_value=150.0, value=65.0, step=1.0)
-            turbidity = st.number_input("Turbidity", min_value=0.0, max_value=10.0, value=3.5, step=0.1)
+        # TẠO FORM BAO BỌC CÁC Ô NHẬP LIỆU VÀ NÚT BẤM
+        with st.form("prediction_form"):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                ph = st.number_input("pH", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+                hardness = st.number_input("Hardness", min_value=0.0, max_value=500.0, value=200.0, step=1.0)
+                solids = st.number_input("Solids", min_value=0.0, max_value=50000.0, value=20000.0, step=100.0)
+            with col2:
+                chloramines = st.number_input("Chloramines", min_value=0.0, max_value=15.0, value=7.0, step=0.1)
+                sulfate = st.number_input("Sulfate", min_value=0.0, max_value=500.0, value=350.0, step=1.0)
+                conductivity = st.number_input("Conductivity", min_value=0.0, max_value=1000.0, value=400.0, step=1.0)
+            with col3:
+                organic_carbon = st.number_input("Organic_carbon", min_value=0.0, max_value=30.0, value=15.0, step=0.1)
+                trihalomethanes = st.number_input("Trihalomethanes", min_value=0.0, max_value=150.0, value=65.0, step=1.0)
+                turbidity = st.number_input("Turbidity", min_value=0.0, max_value=10.0, value=3.5, step=0.1)
 
-        if st.button("🎯 Dự đoán"):
+            # Đổi st.button thành st.form_submit_button
+            submitted = st.form_submit_button("🎯 Dự đoán")
+
+        # NẾU BẤM NÚT SUBMIT THÌ CHẠY DỰ ĐOÁN
+        if submitted:
             input_data = pd.DataFrame({
                 'ph': [ph],
                 'Hardness': [hardness],
