@@ -251,10 +251,36 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         """)
         
 
-        
+        st.subheader("5. Outliers")
 
-        if st.checkbox("Xem mẫu dữ liệu" ):
-            st.dataframe(df.head(10))
+        features = ['ph', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Organic_carbon', 'Trihalomethanes', 'Turbidity']
+        target = 'Potability'
+
+        df_melted = df.melt(id_vars=target, value_vars=features)
+
+        fig_outliers = px.box(
+            df_melted, 
+            x=target,                
+            y="value",              
+            color=target,            
+            facet_col="variable",
+            facet_col_wrap=3,       
+            title="So sánh phân bố đặc trưng giữa nhóm nước không uống được và nước uống được"
+        )
+
+        fig_outliers.update_yaxes(matches=None, showticklabels=True) 
+        fig_outliers.update_xaxes(matches=None, showticklabels=True)
+
+        fig_outliers.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+        fig_outliers.update_layout(height=800)
+
+        st.plotly_chart(fig_outliers, use_container_width=True)
+
+        st.markdown("""
+**Nhận xét:**
+Giá trị outlier của các biến này đều là tự nhiên chứ không phải lỗi khi thu thập dữ liệu. Có thể thử ép outlier thay bằng giá trị râu (capping), để xem hiệu suất có tốt hơn không?
+        """)
 
 elif page == "Model Deployment":
     model, threshold = load_models()
