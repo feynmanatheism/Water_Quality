@@ -136,50 +136,56 @@ def format_score(value: float) -> str:
     return f"{value * 100:.2f}%"
 
 
+# 1. ĐỊNH NGHĨA HÀM VẼ BIỂU ĐỒ (Có dùng cache để tăng tốc)
 @st.cache_resource
 def plot_pairplot(data):
-    # 1. Khởi tạo ma trận lưới
+    # Khởi tạo ma trận lưới, cắt bỏ nửa trên (corner=True)
     g = sns.PairGrid(data, hue="Potability", height=2, aspect=1.5, corner=True)
+    
+    # Chỉ vẽ đồ thị phân tán ở nửa dưới
     g.map_lower(sns.scatterplot)
     
     # Thêm chú giải (legend)
     g.add_legend()
     
-    # -------------------------------------------------------------------
-    # PHẦN CẬP NHẬT: Tăng kích thước chữ và dấu chấm cho "Potability"
-    # -------------------------------------------------------------------
+    # ---------------------------------------------------------
+    # TÙY CHỈNH CHÚ GIẢI (LEGEND) "Potability"
+    # ---------------------------------------------------------
     if g.legend is not None:
-        # 1. Tăng kích thước tiêu đề "Potability" (to hơn chút nữa để làm nổi bật)
+        # Tăng kích thước tiêu đề "Potability"
         g.legend.set_title("Potability", prop={'size': 28, 'weight': 'bold'})
         
-        # 2. Tăng kích thước cho các nhãn giá trị (0 và 1)
+        # Tăng kích thước cho các nhãn giá trị (0 và 1)
         for text in g.legend.get_texts():
-            text.set_fontsize(24)  # Thay đổi con số này (ví dụ 24 hoặc 28)
+            text.set_fontsize(24) 
             
-        # 3. Tăng kích thước các dấu chấm màu bên cạnh số 0 và 1
+        # Tăng kích thước các dấu chấm màu
         for handle in g.legend.legend_handles:
-            handle.set_sizes([200])  # Tăng số 200 này lên nếu muốn chấm to hơn nữa
-    # -------------------------------------------------------------------
-    
+            handle.set_sizes([200]) 
+            
+    # Tiêu đề tổng của biểu đồ
     g.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
     
-    # 2. Vòng lặp để tăng kích thước chữ và làm xiên (xoay) tên đặc trưng
+    # ---------------------------------------------------------
+    # TÙY CHỈNH KÍCH THƯỚC VÀ ĐỘ NGHIÊNG CỦA CHỮ TRÊN TRỤC
+    # ---------------------------------------------------------
     for ax in g.axes.flatten():
+        # Kiểm tra xem ô biểu đồ có tồn tại không
         if ax is not None:
             xlabel = ax.get_xlabel()
             ylabel = ax.get_ylabel()
             
-            # CẬP NHẬT TRỤC X: Thêm rotation=45 để chữ nghiêng 45 độ
+            # Trục X: Chữ to, in đậm, xoay 45 độ
             if xlabel:
                 ax.set_xlabel(xlabel, fontsize=20, fontweight='bold', rotation=45) 
                 
-            # CẬP NHẬT TRỤC Y: Thêm rotation=45 và labelpad để đẩy chữ ra xa trục
+            # Trục Y: Chữ to, in đậm, xoay 45 độ, và đẩy ra xa (labelpad)
             if ylabel:
                 ax.set_ylabel(ylabel, fontsize=20, fontweight='bold', rotation=45, labelpad=40)
                 
-            # (Tùy chọn) Xoay nghiêng luôn cả các con số trên trục X nếu chúng bị đè lên nhau
+            # Xoay nghiêng và tăng kích thước các con số chia vạch (tick labels)
             ax.tick_params(axis='x', labelsize=12, rotation=45) 
-            ax.tick_params(axis='y', labelsize=12)
+            ax.tick_params(axis='y', labelsize=12) 
 
     return g.fig
 
@@ -279,12 +285,15 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         """)
 
 
+        # 2. PHẦN HIỂN THỊ LÊN STREAMLIT (Nơi bạn gọi hàm)
+        # Lưu ý: 'df' là biến chứa DataFrame dữ liệu của bạn
         st.subheader("3. Pair Plot")
         with st.spinner("Đang tạo biểu đồ Pair Plot... (có thể mất vài giây)"):
-            # Gọi hàm đã được gắn cache thay vì vẽ lại từ đầu
+            # Gọi hàm để lấy figure
             fig_pairplot_fig = plot_pairplot(df)
+            
+            # Hiển thị lên Streamlit
             st.pyplot(fig_pairplot_fig)
-        
         st.markdown("""
 **Nhận xét:**
 Đám mây điểm ngẫu nhiên, không theo một trật tự hình khối nào cả. Hai biến của từng cặp hoàn toàn độc lập, không ảnh hưởng gì đến nhau. Điều này có nghĩa là chúng không trùng lặp thông tin với nhau, nên không cần xử lý gì cả.
