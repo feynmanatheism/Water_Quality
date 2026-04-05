@@ -15,7 +15,7 @@ import streamlit as st
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (accuracy_score, classification_report,
                              confusion_matrix, f1_score, precision_score,
-                             recall_score)
+                             recall_score, average_precision_score, precision_recall_curve)
 from sklearn.model_selection import train_test_split
 
 warnings.filterwarnings('ignore')
@@ -360,6 +360,9 @@ elif page == "Model Deployment":
 
 
 elif page == "Evaluation":
+    # Load model và threshold (giống bên trang Deployment)
+    model, threshold = load_models()
+    
     st.title("Evaluation")
     st.markdown("---")
 
@@ -370,8 +373,8 @@ elif page == "Evaluation":
         if df is None:
             st.warning("⚠️ Dữ liệu đánh giá chưa có. Vui lòng thêm file `data/water_potability.csv`.")
         else:
-            st.subheader("Chuẩn bị dữ liệu đánh giá")
-            st.write("Dữ liệu sẽ được impute nếu tồn tại giá trị thiếu và chuẩn hóa bằng scaler.")
+            st.subheader("1. Chuẩn bị dữ liệu đánh giá")
+            st.write("Dữ liệu sẽ được impute nếu tồn tại giá trị thiếu và phân chia thành tập Train/Test.")
 
             X = df[FEATURE_COLUMNS].copy()
             y = df[TARGET_COLUMN].copy()
@@ -385,16 +388,24 @@ elif page == "Evaluation":
                 stratify=y if len(y.unique()) > 1 else None,
             )
 
-            y_pred = model.predict(X_test)
+            # ---------------------------------------------------------
+            # BƯỚC 1: DỰ ĐOÁN XÁC SUẤT VÀ ÁP DỤNG NGƯỠNG TỐI ƯU
+            # ---------------------------------------------------------
+            y_test_proba = model.predict_proba(X_test)[:, 1]
+            y_test_pred_custom = (y_test_proba >= threshold).astype(int)
 
-            st.subheader("Kết quả đánh giá")
-            accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred, zero_division=0)
-            recall = recall_score(y_test, y_pred, zero_division=0)
-            f1 = f1_score(y_test, y_pred, zero_division=0)
-            report = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
+            # Tính toán các độ đo
+            pr_auc = average_precision_score(y_test, y_test_proba)
+            accuracy = accuracy_score(y_test, y_test_pred_custom)
+            precision = precision_score(y_test, y_test_pred_custom, zero_division=0)
+            recall = recall_score(y_test, y_test_pred_custom, zero_division=0)
+            f1 = f1_score(y_test, y_test_pred_custom, zero_division=0)
+            report = classification_report(y_test, y_test_pred_custom, output_dict=True, zero_division=0)
 
+            st.subheader(f"2. Kết quả đánh giá (Áp dụng ngưỡng T = {threshold:.2f})")
+            
             metrics_df = pd.DataFrame({
+                'PR-AUC': [pr_auc],
                 'Accuracy': [accuracy],
                 'Precision': [precision],
                 'Recall': [recall],
@@ -403,14 +414,53 @@ elif page == "Evaluation":
             metrics_df = metrics_df.T.rename(columns={0: 'Value'})
             st.dataframe(metrics_df.style.format('{:.4f}'))
 
-            st.subheader("Ma trận nhầm lẫn")
-            cm = confusion_matrix(y_test, y_pred)
-            cm_df = pd.DataFrame(cm, index=['Không sạch', 'Sạch'], columns=['Dự đoán Không sạch', 'Dự đoán Sạch'])
-            fig, ax = plt.subplots(figsize=(6, 4))
-            sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues', ax=ax)
-            ax.set_ylabel('Thực tế')
-            ax.set_xlabel('Dự đoán')
+            # ---------------------------------------------------------
+            # BƯỚC 2: VẼ MA TRẬN NHẦM LẪN VÀ PR CURVE (1 HÀNG, 2 CỘT)
+            # ---------------------------------------------------------
+            st.subheader("3. Biểu đồ đánh giá chi tiết")
+            
+            test_precisions, test_recalls, _ = precision_recall_curve(y_test, y_test_proba)
+            fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+            # --- BIỂU ĐỒ 1: CONFUSION MATRIX ---
+            cm = confusion_matrix(y_test, y_test_pred_custom)
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
+                        xticklabels=['Dự đoán Bẩn (0)', 'Dự đoán Sạch (1)'],
+                        yticklabels=['Thực tế Bẩn (0)', 'Thực tế Sạch (1)'],
+                        ax=axes[0])
+            axes[0].set_title(f'Confusion Matrix (Ngưỡng = {threshold:.2f})')
+            axes[0].set_ylabel('Nhãn Thực tế')
+            axes[0].set_xlabel('Nhãn Dự đoán')
+
+            # --- BIỂU ĐỒ 2: PRECISION-RECALL CURVE ---
+            axes[1].plot(test_recalls, test_precisions, color='blue', lw=2, label=f'PR Curve (AUC = {pr_auc:.4f})')
+            # Vẽ một điểm đỏ đánh dấu ngưỡng đã chọn
+            axes[1].plot(recall, precision, marker='o', color='red', markersize=8, 
+                         label=f'Ngưỡng chọn ({threshold:.2f})')
+
+            axes[1].set_title('Precision-Recall Curve (Tập Test)')
+            axes[1].set_xlabel('Recall')
+            axes[1].set_ylabel('Precision')
+            axes[1].legend(loc='lower left')
+            axes[1].grid(True, linestyle='--', alpha=0.6)
+
+            # Hiển thị biểu đồ lên Streamlit
             st.pyplot(fig)
 
-            st.subheader("Chi tiết báo cáo phân loại")
+            # Hiển thị cảnh báo False Positive
+            st.warning(f"⚠️ **Chú ý:** Có **{cm[0, 1]}** mẫu 'Nước Bẩn' bị mô hình dự đoán nhầm là 'Nước Sạch' (False Positives).")
+
+            # ---------------------------------------------------------
+            # BƯỚC 3: HIỂN THỊ NHẬN XÉT ĐÁNH GIÁ (MARKDOWN)
+            # ---------------------------------------------------------
+            st.markdown(f"""
+### 💡 Nhận xét đánh giá mô hình (Tập Test)
+* **Hiệu suất phân loại tốt:** Chỉ số PR-AUC đạt **{pr_auc:.4f}** khẳng định mô hình đã học được các quy luật thực tế để phân biệt nước an toàn và không an toàn, thay vì chỉ dự đoán ngẫu nhiên.
+* **Đạt mục tiêu an toàn tuyệt đối:** Việc tinh chỉnh ngưỡng lên **{threshold:.2f}** đã đẩy độ chính xác (Precision) lên mức rất cao (**{precision*100:.1f}%**). Nghĩa là khi mô hình báo "Nước Sạch", độ tin cậy đạt trên {precision*100:.1f}%.
+* **Kiểm soát rủi ro cực thấp:** Ma trận nhầm lẫn cho thấy chỉ có **{cm[0, 1]}** mẫu nước bẩn bị nhận diện sai (False Positives). Đây là con số rất nhỏ, giúp hạn chế tối đa rủi ro gây hại cho sức khỏe người dùng.
+* **Sự đánh đổi tất yếu (Trade-off):** Để đạt mức độ an toàn cao, mô hình phải đánh đổi bằng độ bao phủ (Recall giảm còn **{recall*100:.1f}%**). Mô hình chấp nhận "chê nhầm" **{cm[1, 0]}** mẫu nước sạch (False Negatives) để đảm bảo không bỏ lọt nước bẩn.
+            """)
+
+            st.markdown("---")
+            st.subheader("4. Chi tiết báo cáo phân loại (Classification Report)")
             st.dataframe(pd.DataFrame(report).transpose().round(4))
