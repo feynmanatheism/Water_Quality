@@ -146,35 +146,40 @@ def plot_pairplot(data):
     g.add_legend()
     
     # -------------------------------------------------------------------
-    # PHẦN CẬP NHẬT: Tăng kích thước chữ cho chú thích "Potability"
+    # PHẦN CẬP NHẬT: Tăng kích thước chữ và dấu chấm cho "Potability"
     # -------------------------------------------------------------------
     if g.legend is not None:
-        # Tăng kích thước tiêu đề của chú thích (chữ "Potability")
-        g.legend.set_title("Potability", prop={'size': 24, 'weight': 'bold'})
+        # 1. Tăng kích thước tiêu đề "Potability" (to hơn chút nữa để làm nổi bật)
+        g.legend.set_title("Potability", prop={'size': 28, 'weight': 'bold'})
         
-        # Tăng kích thước cho các nhãn giá trị bên dưới (ví dụ: 0 và 1)
+        # 2. Tăng kích thước cho các nhãn giá trị (0 và 1)
         for text in g.legend.get_texts():
-            text.set_fontsize(18)
+            text.set_fontsize(24)  # Thay đổi con số này (ví dụ 24 hoặc 28)
+            
+        # 3. Tăng kích thước các dấu chấm màu bên cạnh số 0 và 1
+        for handle in g.legend.legend_handles:
+            handle.set_sizes([200])  # Tăng số 200 này lên nếu muốn chấm to hơn nữa
     # -------------------------------------------------------------------
     
     g.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
     
-    # 2. Vòng lặp để tăng kích thước chữ cho tên đặc trưng
+    # 2. Vòng lặp để tăng kích thước chữ và làm xiên (xoay) tên đặc trưng
     for ax in g.axes.flatten():
-        # Kiểm tra xem ô biểu đồ có tồn tại không (do dùng corner=True sẽ có ô bị ẩn)
         if ax is not None:
-            # Lấy tên đặc trưng hiện tại của trục X và Y
             xlabel = ax.get_xlabel()
             ylabel = ax.get_ylabel()
             
-            # Đặt lại tên với fontsize lớn hơn
+            # CẬP NHẬT TRỤC X: Thêm rotation=45 để chữ nghiêng 45 độ
             if xlabel:
-                ax.set_xlabel(xlabel, fontsize=20, fontweight='bold') 
-            if ylabel:
-                ax.set_ylabel(ylabel, fontsize=20, fontweight='bold')
+                ax.set_xlabel(xlabel, fontsize=20, fontweight='bold', rotation=45) 
                 
-            # Tăng kích thước các con số chia vạch trên trục
-            ax.tick_params(axis='both', labelsize=12) 
+            # CẬP NHẬT TRỤC Y: Thêm rotation=45 và labelpad để đẩy chữ ra xa trục
+            if ylabel:
+                ax.set_ylabel(ylabel, fontsize=20, fontweight='bold', rotation=45, labelpad=40)
+                
+            # (Tùy chọn) Xoay nghiêng luôn cả các con số trên trục X nếu chúng bị đè lên nhau
+            ax.tick_params(axis='x', labelsize=12, rotation=45) 
+            ax.tick_params(axis='y', labelsize=12)
 
     return g.fig
 
