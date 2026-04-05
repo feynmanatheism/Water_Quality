@@ -217,13 +217,12 @@ if page == "EDA":
 Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (-0.17). Và Solids tương quan nghịch kém với pH (-0.09). Tương quan không mạnh nên không cần loại bỏ đặc trưng nào cả.
         """)
 
-        
+
         st.subheader("3. Pair Plot")
-        fig_pairplot = plt.figure(figsize=(15, 10))
-        sns.pairplot(df, hue="Potability")
-        plt.title("Nhìn vào bên trong dữ liệu")
-        plt.tight_layout()
-        st.pyplot(fig_pairplot)
+        with st.spinner("Đang tạo biểu đồ Pair Plot... (có thể mất vài giây)"):
+            fig_pairplot = sns.pairplot(df, hue="Potability", height=2, aspect=1.5)
+            fig_pairplot.fig.suptitle("Nhìn vào bên trong dữ liệu", y=1.00)
+            st.pyplot(fig_pairplot.fig)
         
         st.markdown("""
 **Nhận xét:**
