@@ -161,6 +161,9 @@ if page == "EDA":
         st.write(f"- Số lượng bản ghi: **{len(df)}**")
         st.write(f"- Số lượng cột: **{len(df.columns)}**")
 
+        st.subheader("Dữ liệu thô (mẫu)")
+        st.dataframe(df, height=300, use_container_width=True)
+
         missing = df.isna().sum()
         st.write("**Giá trị thiếu theo cột:**")
         st.dataframe(missing[missing > 0].to_frame("Missing Count"))
