@@ -159,9 +159,14 @@ def plot_pairplot(data):
         for text in g.legend.get_texts():
             text.set_fontsize(24) 
             
-        # Tăng kích thước các dấu chấm màu
+        # Tăng kích thước các dấu chấm màu (Đã fix lỗi AttributeError)
         for handle in g.legend.legend_handles:
-            handle.set_sizes([200]) 
+            # Dành cho phiên bản dùng PathCollection
+            if hasattr(handle, 'set_sizes'):
+                handle.set_sizes([200]) 
+            # Dành cho phiên bản dùng Line2D (Thường gặp trên môi trường Cloud)
+            elif hasattr(handle, 'set_markersize'):
+                handle.set_markersize(15)  # Lưu ý: markersize 15 nhìn sẽ tương đương với sizes 200
             
     # Tiêu đề tổng của biểu đồ
     g.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
