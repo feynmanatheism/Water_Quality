@@ -157,18 +157,18 @@ if page == "EDA":
     if df is None:
         st.warning("⚠️ Không tìm thấy dữ liệu mẫu. Vui lòng thêm file `data/water_potability.csv`.")
     else:
-        st.subheader("Tổng quan tập dữ liệu")
+        st.subheader("1. Tổng quan tập dữ liệu")
         st.write(f"- Số lượng bản ghi: **{len(df)}**")
         st.write(f"- Số lượng cột: **{len(df.columns)}**")
 
-        st.write("**Dữ liệu thô (mẫu)**")
+        st.write("**1.1. Dữ liệu thô (mẫu)**")
         st.dataframe(df, height=300, use_container_width=True)
 
         missing = df.isna().sum()
-        st.write("**Giá trị thiếu theo cột:**")
+        st.write("**1.2. Giá trị thiếu theo cột:**")
         st.dataframe(missing[missing > 0].to_frame("Missing Count"))
 
-        st.write("**Thông tin cơ bản các thuộc tính**")
+        st.write("**1.3. Thông tin cơ bản các thuộc tính**")
         st.markdown("""
 * **pH value (Giá trị pH):** Đánh giá sự cân bằng acid-base và xác định tính kiềm hay tính acid của nước. Ngưỡng khuyến nghị của WHO là từ **6.5 đến 8.5**.
 * **Hardness (Độ cứng):** Gây ra bởi các muối Canxi và Magiê hòa tan từ địa tầng địa chất. Chỉ số này phản ánh khả năng kết tủa xà phòng của nước.
@@ -184,8 +184,20 @@ if page == "EDA":
     * **0**: Không thể uống được (Not potable).
         """)
 
-        st.subheader("Biểu đồ phân bố dữ liệu")
+        st.subheader("2. Correlation Matrix")
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        corr = df[numeric_cols].corr()
+        fig2, ax2 = plt.subplots(figsize=(10, 8))
+        sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', ax=ax2)
+        ax2.set_title("Heatmap tương quan giữa các biến")
+        st.pyplot(fig2)
+        
+        st.markdown("""
+**Nhận xét:**
+Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (-0.17). Và Solids tương quan nghịch kém với pH (-0.09). Tương quan không mạnh nên không cần loại bỏ đặc trưng nào cả.
+        """)
+
+        st.subheader("3. Biểu đồ phân bố dữ liệu")
         selected_col = st.selectbox("Chọn cột để xem thống kê:", numeric_cols)
 
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -194,13 +206,6 @@ if page == "EDA":
         ax.set_ylabel("Tần suất")
         ax.set_title(f"Phân bố {selected_col}")
         st.pyplot(fig)
-
-        st.subheader("Ma trận tương quan")
-        corr = df[numeric_cols].corr()
-        fig2, ax2 = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', ax=ax2)
-        ax2.set_title("Heatmap tương quan giữa các biến")
-        st.pyplot(fig2)
 
         if st.checkbox("Xem mẫu dữ liệu" ):
             st.dataframe(df.head(10))
