@@ -264,7 +264,11 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
             y="value",              
             color=target,            
             facet_col="variable",
-            facet_col_wrap=3,       
+            facet_col_wrap=3,
+            color_discrete_map={
+                0: "#FF9999",  
+                1: "#66b3ff"
+            },
             title="So sánh phân bố đặc trưng giữa nhóm nước không uống được và nước uống được"
         )
 
