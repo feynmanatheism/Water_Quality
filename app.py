@@ -182,15 +182,15 @@ def plot_pairplot(data):
             
             # Trục X: Chữ to, in đậm, xoay 45 độ
             if xlabel:
-                ax.set_xlabel(xlabel, fontsize=20, fontweight='bold', rotation=45) 
+                ax.set_xlabel(xlabel, fontsize=24, fontweight='bold', rotation=45) 
                 
             # Trục Y: Chữ to, in đậm, xoay 45 độ, và đẩy ra xa (labelpad)
             if ylabel:
-                ax.set_ylabel(ylabel, fontsize=20, fontweight='bold', rotation=45, labelpad=40)
+                ax.set_ylabel(ylabel, fontsize=24, fontweight='bold', rotation=45, labelpad=40)
                 
             # Xoay nghiêng và tăng kích thước các con số chia vạch (tick labels)
-            ax.tick_params(axis='x', labelsize=12, rotation=45) 
-            ax.tick_params(axis='y', labelsize=12) 
+            ax.tick_params(axis='x', labelsize=24, rotation=45) 
+            ax.tick_params(axis='y', labelsize=24, rotation=45) 
 
     return g.fig
 
