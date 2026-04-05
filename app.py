@@ -221,7 +221,7 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         st.subheader("3. Pair Plot")
         with st.spinner("Đang tạo biểu đồ Pair Plot... (có thể mất vài giây)"):
             fig_pairplot = sns.pairplot(df, hue="Potability", height=2, aspect=1.5)
-            fig_pairplot.fig.suptitle("Nhìn vào bên trong dữ liệu", y=1.00)
+            fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=16, fontweight='bold')
             st.pyplot(fig_pairplot.fig)
         
         st.markdown("""
