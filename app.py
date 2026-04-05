@@ -217,7 +217,20 @@ if page == "EDA":
 Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (-0.17). Và Solids tương quan nghịch kém với pH (-0.09). Tương quan không mạnh nên không cần loại bỏ đặc trưng nào cả.
         """)
 
-        st.subheader("3. Biểu đồ phân bố dữ liệu")
+        
+        st.subheader("3. Pair Plot")
+        fig_pairplot = plt.figure(figsize=(15, 10))
+        sns.pairplot(df, hue="Potability")
+        plt.title("Nhìn vào bên trong dữ liệu")
+        plt.tight_layout()
+        st.pyplot(fig_pairplot)
+        
+        st.markdown("""
+**Nhận xét:**
+Đám mây điểm ngẫu nhiên, không theo một trật tự hình khối nào cả. Hai biến của từng cặp hoàn toàn độc lập, không ảnh hưởng gì đến nhau. Điều này có nghĩa là chúng không trùng lặp thông tin với nhau, nên không cần xử lý gì cả.
+        """)
+
+        st.subheader("4. Biểu đồ phân bố dữ liệu")
         selected_col = st.selectbox("Chọn cột để xem thống kê:", numeric_cols)
 
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -226,6 +239,8 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         ax.set_ylabel("Tần suất")
         ax.set_title(f"Phân bố {selected_col}")
         st.pyplot(fig)
+
+        
 
         if st.checkbox("Xem mẫu dữ liệu" ):
             st.dataframe(df.head(10))
