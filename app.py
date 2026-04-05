@@ -327,10 +327,9 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         features = ['ph', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Organic_carbon', 'Trihalomethanes', 'Turbidity']
         target = 'Potability'
 
-        # Melt data
+        # 1. Khởi tạo biểu đồ
         df_melted = df.melt(id_vars=target, value_vars=features)
 
-        # Khởi tạo biểu đồ
         fig_outliers = px.box(
             df_melted, 
             x=target,                
@@ -342,45 +341,45 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
                 0: "#FF9999",  
                 1: "#66b3ff"
             },
-            title="<b>So sánh phân bố đặc trưng giữa nhóm nước không uống được và nước uống được</b>" # Thêm thẻ <b> để in đậm tiêu đề
+            title="<b>So sánh phân bố đặc trưng giữa nhóm nước không uống được và nước uống được</b>" 
         )
 
-        # 1. Tùy chỉnh kích thước và in đậm TÊN CÁC ĐẶC TRƯNG (tiêu đề của từng biểu đồ con)
+        # 2. ÉP TẤT CẢ FONT CHỮ THÀNH MÀU ĐEN (Phương án mạnh tay)
+        fig_outliers.update_layout(
+            height=900,
+            font=dict(color="black"), # Dòng này sẽ bắt mọi chữ chưa được gán màu phải chuyển sang Đen
+            title_font=dict(size=24, color='black'),          
+            legend_title_font=dict(size=20, color='black'),   
+            legend_font=dict(size=18, color='black')          
+        )
+
+        # 3. Tùy chỉnh TÊN CÁC ĐẶC TRƯNG (ph, Hardness...)
         fig_outliers.for_each_annotation(
             lambda a: a.update(
-                text=f'<b>{a.text.split("=")[-1]}</b>',  # Cắt chuỗi và thêm thẻ in đậm
-                font=dict(size=20, color='black')        # Chỉnh size và ép màu đen
+                text=f'<b>{a.text.split("=")[-1]}</b>',  
+                font=dict(size=20, color='black')        
             )
         )
 
-        # 2. Tùy chỉnh TRỤC X: Phóng to số 0, 1 và tiêu đề trục
+        # 4. Tùy chỉnh TRỤC X
         fig_outliers.update_xaxes(
             matches=None, 
             showticklabels=True,
-            tickfont=dict(size=18, color='black'),            # Kích thước số 0, 1 trên trục X
-            title_font=dict(size=20, color='black'),          # Kích thước chữ "Potability" ở trục X
-            title_text="<b>Potability</b>"                    # In đậm chữ Potability
+            tickfont=dict(size=18, color='black'),            
+            title_font=dict(size=20, color='black'),          
+            color="black"  # Bắt buộc các đường kẻ vạch và nhãn mặc định phải màu đen
         )
 
-        # 3. Tùy chỉnh TRỤC Y: Phóng to các con số chia vạch và tiêu đề trục
+        # 5. Tùy chỉnh TRỤC Y
         fig_outliers.update_yaxes(
             matches=None, 
             showticklabels=True,
-            tickfont=dict(size=14, color='black'),            # Kích thước các con số trên trục Y
-            title_font=dict(size=18, color='black')           # Kích thước chữ "value" ở trục Y
+            tickfont=dict(size=14, color='black'),            
+            title_font=dict(size=18, color='black'),
+            color="black"  # Bắt buộc các đường kẻ vạch và nhãn mặc định phải màu đen
         )
 
-        # 4. Tùy chỉnh BỐ CỤC CHUNG: Chú thích (Legend) và Tiêu đề tổng
-        fig_outliers.update_layout(
-            height=900,  # Tăng chiều cao lên một chút (từ 800 -> 900) vì chữ to ra sẽ cần nhiều không gian hơn
-            title_font=dict(size=24, color='black'),          # Kích thước tiêu đề biểu đồ
-            
-            # Phóng to bảng chú thích màu (Legend)
-            legend_title_font=dict(size=20, color='black'),   # Chữ "Potability" trong chú thích
-            legend_font=dict(size=18, color='black')          # Số 0 và 1 trong chú thích
-        )
-
-        # Hiển thị lên Streamlit
+        # Bắt buộc giữ theme=None để tránh Streamlit nhúng tay vào
         st.plotly_chart(fig_outliers, use_container_width=True, theme=None)
 
         st.markdown("""
