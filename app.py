@@ -138,9 +138,30 @@ def format_score(value: float) -> str:
 
 @st.cache_resource
 def plot_pairplot(data):
-    fig_pairplot = sns.pairplot(data, hue="Potability", height=2, aspect=1.5)
-    fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
-    return fig_pairplot.fig
+    # 1. Khởi tạo ma trận lưới
+    g = sns.PairGrid(data, hue="Potability", height=2, aspect=1.5, corner=True)
+    g.map_lower(sns.scatterplot)
+    g.add_legend()
+    g.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
+    
+    # 2. Vòng lặp để tăng kích thước chữ cho tên đặc trưng
+    for ax in g.axes.flatten():
+        # Kiểm tra xem ô biểu đồ có tồn tại không (do dùng corner=True sẽ có ô bị ẩn)
+        if ax is not None:
+            # Lấy tên đặc trưng hiện tại của trục X và Y
+            xlabel = ax.get_xlabel()
+            ylabel = ax.get_ylabel()
+            
+            # Đặt lại tên với fontsize lớn hơn (bạn thay đổi con số 16 tùy ý nhé)
+            if xlabel:
+                ax.set_xlabel(xlabel, fontsize=24, fontweight='bold') 
+            if ylabel:
+                ax.set_ylabel(ylabel, fontsize=24, fontweight='bold')
+                
+            # (Tùy chọn bổ sung) Tăng kích thước các con số chia vạch trên trục
+            ax.tick_params(axis='both', labelsize=12) 
+
+    return g.fig
 
 
 st.sidebar.title("Navigation")
