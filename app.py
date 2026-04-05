@@ -381,7 +381,7 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         )
 
         # Hiển thị lên Streamlit
-        st.plotly_chart(fig_outliers, use_container_width=True)
+        st.plotly_chart(fig_outliers, use_container_width=True, theme=None)
 
         st.markdown("""
 **Nhận xét:**
