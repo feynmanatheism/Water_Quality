@@ -161,12 +161,28 @@ if page == "EDA":
         st.write(f"- Số lượng bản ghi: **{len(df)}**")
         st.write(f"- Số lượng cột: **{len(df.columns)}**")
 
-        st.subheader("Dữ liệu thô (mẫu)")
+        st.write("**Dữ liệu thô (mẫu)**")
         st.dataframe(df, height=300, use_container_width=True)
 
         missing = df.isna().sum()
         st.write("**Giá trị thiếu theo cột:**")
         st.dataframe(missing[missing > 0].to_frame("Missing Count"))
+
+        st.write("**Thông tin cơ bản các thuộc tính**")
+        st.markdown("""
+* **pH value (Giá trị pH):** Đánh giá sự cân bằng acid-base và xác định tính kiềm hay tính acid của nước. Ngưỡng khuyến nghị của WHO là từ **6.5 đến 8.5**.
+* **Hardness (Độ cứng):** Gây ra bởi các muối Canxi và Magiê hòa tan từ địa tầng địa chất. Chỉ số này phản ánh khả năng kết tủa xà phòng của nước.
+* **Solids (Tổng chất rắn hòa tan - TDS):** Đo lường nồng độ các khoáng chất, muối vô cơ và hữu cơ hòa tan (như Kali, Natri, Clorua, Sulfate...). Giới hạn lý tưởng là **500 mg/l** và tối đa là **1000 mg/l** cho nước uống.
+* **Chloramines:** Chất khử trùng chính trong hệ thống nước công cộng, hình thành khi thêm Amoniac vào Clo. Mức an toàn tối đa là **4 mg/L (4 ppm)**.
+* **Sulfate (Sunfat):** Chất tự nhiên tìm thấy trong khoáng vật và đá. Nồng độ trong nước ngọt thường từ **3 - 30 mg/L**, tuy nhiên có thể lên tới 1000 mg/L ở một số khu vực địa chất đặc thù.
+* **Conductivity (Độ dẫn điện):** Đo lường nồng độ ion thông qua khả năng truyền dòng điện của nước. Theo tiêu chuẩn WHO, giá trị này không được vượt quá **400 μS/cm**.
+* **Organic_carbon (Cacbon hữu cơ tổng số - TOC):** Đo lường tổng lượng cacbon trong các hợp chất hữu cơ từ tự nhiên hoặc tổng hợp. Tiêu chuẩn US EPA yêu cầu **< 2 mg/L** đối với nước uống đã qua xử lý.
+* **Trihalomethanes (THMs):** Các phụ phẩm hóa học phát sinh khi xử lý nước bằng Clo. Nồng độ lên tới **80 ppm** được coi là an toàn cho người sử dụng.
+* **Turbidity (Độ đục):** Đo lường lượng chất rắn ở trạng thái lơ lửng dựa trên tính chất phát xạ ánh sáng. Tiêu chuẩn của WHO khuyến nghị độ đục phải thấp hơn **5.00 NTU**.
+* **Potability (Khả năng uống được):** Biến mục tiêu phân loại mức độ an toàn cho con người.
+    * **1**: Có thể uống được (Potable).
+    * **0**: Không thể uống được (Not potable).
+        """)
 
         st.subheader("Biểu đồ phân bố dữ liệu")
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
