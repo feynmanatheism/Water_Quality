@@ -221,7 +221,7 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
         st.subheader("3. Pair Plot")
         with st.spinner("Đang tạo biểu đồ Pair Plot... (có thể mất vài giây)"):
             fig_pairplot = sns.pairplot(df, hue="Potability", height=2, aspect=1.5)
-            fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=16, fontweight='bold')
+            fig_pairplot.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
             st.pyplot(fig_pairplot.fig)
         
         st.markdown("""
@@ -229,15 +229,23 @@ Chỉ có Sulfate tương quan nghịch kém với Hardness (-0.11) và Solids (
 Đám mây điểm ngẫu nhiên, không theo một trật tự hình khối nào cả. Hai biến của từng cặp hoàn toàn độc lập, không ảnh hưởng gì đến nhau. Điều này có nghĩa là chúng không trùng lặp thông tin với nhau, nên không cần xử lý gì cả.
         """)
 
-        st.subheader("4. Biểu đồ phân bố dữ liệu")
+        st.subheader("4. Skewness Check")
         selected_col = st.selectbox("Chọn cột để xem thống kê:", numeric_cols)
 
+        
         fig, ax = plt.subplots(figsize=(10, 4))
-        df[selected_col].hist(bins=30, ax=ax, edgecolor='black', color='skyblue')
+        sns.histplot(df[selected_col], kde=True, ax=ax, color='skyblue', edgecolor='black')
         ax.set_xlabel(selected_col)
         ax.set_ylabel("Tần suất")
         ax.set_title(f"Phân bố {selected_col}")
         st.pyplot(fig)
+        st.markdown("""
+**Nhận xét:**
+* Bị lệch phải: **Solids**
+* Hơi bị lệch phải: **Conductivity** 
+    * Nếu dữ liệu ở 2 biến này bị thiếu thì điền median thay cho mean. 
+        """)
+        
 
         
 
