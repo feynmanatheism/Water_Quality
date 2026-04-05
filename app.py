@@ -215,7 +215,14 @@ if page == "EDA":
             xaxis_title="",
             yaxis_title=""
         )
-        fig2.update_traces(text=corr.values, texttemplate='%{text:.2f}')
+        fig2.update_traces(
+        text=corr.values, 
+        texttemplate='<b>%{text:.2f}</b>',  # Thêm thẻ <b>...</b> để in đậm
+        textfont=dict(
+            color='black',                  # Ép màu chữ thành đen (hoặc 'darkblue', 'darkred' tùy ý)
+            size=16                         # Bạn có thể tăng giảm size chữ ở đây cho phù hợp
+        )
+    )
         st.plotly_chart(fig2, use_container_width=True)
         
         st.markdown("""
