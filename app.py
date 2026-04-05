@@ -204,11 +204,18 @@ if page == "EDA":
                         zmin=-1,
                         zmax=1)
         fig2.update_layout(
-            xaxis_tickfont_size=24,  # Thay đổi con số này cho trục X
-            yaxis_tickfont_size=24,  # Thay đổi con số này cho trục Y
+            # 1. Chỉnh kích thước và ép màu ĐEN cho tên biến ở trục X và Y
+            xaxis_tickfont_size=24,
+            xaxis_tickfont_color='black',  # Thêm dòng này để chữ trục X đậm hơn
+            yaxis_tickfont_size=24,
+            yaxis_tickfont_color='black',  # Thêm dòng này để chữ trục Y đậm hơn
+            
+            # 2. Chỉnh màu đen cho thanh chú thích (colorbar) bên phải
             coloraxis_colorbar=dict(
                 yanchor="bottom",
-                y=0
+                y=0,
+                title_font=dict(color='black', size=14), # Làm đậm chữ "Tương quan"
+                tickfont=dict(color='black', size=14)    # Làm đậm các con số 1, 0.5, 0...
             ),
             width=800,
             height=800,
