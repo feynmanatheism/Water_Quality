@@ -194,7 +194,7 @@ if page == "EDA":
                         labels=dict(x="Biến", y="Biến", color="Tương quan"),
                         x=corr.columns,
                         y=corr.columns,
-                        color_continuous_scale='RdBu',
+                        color_continuous_scale='RdBu_r',
                         text_auto='.2f',
                         aspect="auto",
                         zmin=-1,
