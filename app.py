@@ -141,7 +141,22 @@ def plot_pairplot(data):
     # 1. Khởi tạo ma trận lưới
     g = sns.PairGrid(data, hue="Potability", height=2, aspect=1.5, corner=True)
     g.map_lower(sns.scatterplot)
+    
+    # Thêm chú giải (legend)
     g.add_legend()
+    
+    # -------------------------------------------------------------------
+    # PHẦN CẬP NHẬT: Tăng kích thước chữ cho chú thích "Potability"
+    # -------------------------------------------------------------------
+    if g.legend is not None:
+        # Tăng kích thước tiêu đề của chú thích (chữ "Potability")
+        g.legend.set_title("Potability", prop={'size': 24, 'weight': 'bold'})
+        
+        # Tăng kích thước cho các nhãn giá trị bên dưới (ví dụ: 0 và 1)
+        for text in g.legend.get_texts():
+            text.set_fontsize(18)
+    # -------------------------------------------------------------------
+    
     g.fig.suptitle("Biểu đồ pair plot của các đặc trưng trong tập dữ liệu", y=1.00, fontsize=48, fontweight='bold')
     
     # 2. Vòng lặp để tăng kích thước chữ cho tên đặc trưng
@@ -152,13 +167,13 @@ def plot_pairplot(data):
             xlabel = ax.get_xlabel()
             ylabel = ax.get_ylabel()
             
-            # Đặt lại tên với fontsize lớn hơn (bạn thay đổi con số 16 tùy ý nhé)
+            # Đặt lại tên với fontsize lớn hơn
             if xlabel:
-                ax.set_xlabel(xlabel, fontsize=24, fontweight='bold') 
+                ax.set_xlabel(xlabel, fontsize=20, fontweight='bold') 
             if ylabel:
-                ax.set_ylabel(ylabel, fontsize=24, fontweight='bold')
+                ax.set_ylabel(ylabel, fontsize=20, fontweight='bold')
                 
-            # (Tùy chọn bổ sung) Tăng kích thước các con số chia vạch trên trục
+            # Tăng kích thước các con số chia vạch trên trục
             ax.tick_params(axis='both', labelsize=12) 
 
     return g.fig
