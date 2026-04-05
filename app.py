@@ -531,25 +531,38 @@ elif page == "Evaluation":
             fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
             # --- BIỂU ĐỒ 1: CONFUSION MATRIX ---
-            cm = confusion_matrix(y_test, y_test_pred_custom)
+            # Thêm annot_kws để tăng kích thước và in đậm các con số bên trong ma trận
             sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
                         xticklabels=['Dự đoán Bẩn (0)', 'Dự đoán Sạch (1)'],
                         yticklabels=['Thực tế Bẩn (0)', 'Thực tế Sạch (1)'],
-                        ax=axes[0])
-            axes[0].set_title(f'Confusion Matrix (Ngưỡng = {threshold:.2f})')
-            axes[0].set_ylabel('Nhãn Thực tế')
-            axes[0].set_xlabel('Nhãn Dự đoán')
+                        ax=axes[0],
+                        annot_kws={"size": 24, "weight": "bold"}) # Cập nhật ở đây
+            
+            # Phóng to tiêu đề và nhãn trục
+            axes[0].set_title(f'Confusion Matrix (Ngưỡng = {threshold:.2f})', fontsize=20, fontweight='bold')
+            axes[0].set_ylabel('Nhãn Thực tế', fontsize=16, fontweight='bold')
+            axes[0].set_xlabel('Nhãn Dự đoán', fontsize=16, fontweight='bold')
+            
+            # Phóng to chữ ở các vạch chia (Dự đoán Bẩn/Sạch...)
+            axes[0].tick_params(axis='both', labelsize=14)
 
             # --- BIỂU ĐỒ 2: PRECISION-RECALL CURVE ---
             axes[1].plot(test_recalls, test_precisions, color='blue', lw=2, label=f'PR Curve (AUC = {pr_auc:.4f})')
-            # Vẽ một điểm đỏ đánh dấu ngưỡng đã chọn
-            axes[1].plot(recall, precision, marker='o', color='red', markersize=8, 
+            
+            # Tăng kích thước marker (dấu chấm đỏ) từ 8 lên 12 cho cân xứng với chữ
+            axes[1].plot(recall, precision, marker='o', color='red', markersize=12, 
                          label=f'Ngưỡng chọn ({threshold:.2f})')
 
-            axes[1].set_title('Precision-Recall Curve (Tập Test)')
-            axes[1].set_xlabel('Recall')
-            axes[1].set_ylabel('Precision')
-            axes[1].legend(loc='lower left')
+            # Phóng to tiêu đề và nhãn trục
+            axes[1].set_title('Precision-Recall Curve (Tập Test)', fontsize=20, fontweight='bold')
+            axes[1].set_xlabel('Recall', fontsize=16, fontweight='bold')
+            axes[1].set_ylabel('Precision', fontsize=16, fontweight='bold')
+            
+            # Phóng to số chia vạch trên trục X và Y (0.0, 0.2, 0.4...)
+            axes[1].tick_params(axis='both', labelsize=14)
+            
+            # Phóng to bảng chú thích (Legend)
+            axes[1].legend(loc='lower left', fontsize=14)
             axes[1].grid(True, linestyle='--', alpha=0.6)
 
             # Hiển thị biểu đồ lên Streamlit
