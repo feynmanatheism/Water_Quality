@@ -295,27 +295,23 @@ elif page == "Model Deployment":
     if model is None:
         st.error("❌ Mô hình chưa được tải. Kiểm tra thư mục `models/`.")
     else:
-        # TẠO FORM BAO BỌC CÁC Ô NHẬP LIỆU VÀ NÚT BẤM
-        with st.form("prediction_form"):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                ph = st.number_input("pH", value=7.0, step=0.1)
-                hardness = st.number_input("Hardness", value=200.0, step=1.0)
-                solids = st.number_input("Solids", value=20000.0, step=100.0)
-            with col2:
-                chloramines = st.number_input("Chloramines", value=7.0, step=0.1)
-                sulfate = st.number_input("Sulfate", value=350.0, step=1.0)
-                conductivity = st.number_input("Conductivity", value=400.0, step=1.0)
-            with col3:
-                organic_carbon = st.number_input("Organic_carbon", value=15.0, step=0.1)
-                trihalomethanes = st.number_input("Trihalomethanes", value=65.0, step=1.0)
-                turbidity = st.number_input("Turbidity", value=3.5, step=0.1)
+        # BỎ st.form ĐI, DÙNG TRỰC TIẾP CÁC CỘT
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            ph = st.number_input("pH", value=7.0, step=0.1)
+            hardness = st.number_input("Hardness", value=200.0, step=1.0)
+            solids = st.number_input("Solids", value=20000.0, step=100.0)
+        with col2:
+            chloramines = st.number_input("Chloramines", value=7.0, step=0.1)
+            sulfate = st.number_input("Sulfate", value=350.0, step=1.0)
+            conductivity = st.number_input("Conductivity", value=400.0, step=1.0)
+        with col3:
+            organic_carbon = st.number_input("Organic_carbon", value=15.0, step=0.1)
+            trihalomethanes = st.number_input("Trihalomethanes", value=65.0, step=1.0)
+            turbidity = st.number_input("Turbidity", value=3.5, step=0.1)
 
-            # Đổi st.button thành st.form_submit_button
-            submitted = st.form_submit_button("🎯 Dự đoán")
-
-        # NẾU BẤM NÚT SUBMIT THÌ CHẠY DỰ ĐOÁN
-        if submitted:
+        # DÙNG NÚT BẤM BÌNH THƯỜNG (Bỏ st.form_submit_button)
+        if st.button("🎯 Dự đoán"):
             input_data = pd.DataFrame({
                 'ph': [ph],
                 'Hardness': [hardness],
