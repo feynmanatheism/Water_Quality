@@ -9,6 +9,7 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import seaborn as sns
 import streamlit as st
 from sklearn.impute import SimpleImputer
@@ -187,10 +188,27 @@ if page == "EDA":
         st.subheader("2. Correlation Matrix")
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         corr = df[numeric_cols].corr()
-        fig2, ax2 = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', ax=ax2)
-        ax2.set_title("Heatmap tương quan giữa các biến")
-        st.pyplot(fig2)
+        
+        fig2 = px.imshow(corr, 
+                        title="Biểu đồ tương quan của tập dữ liệu",
+                        labels=dict(x="Biến", y="Biến", color="Tương quan"),
+                        x=corr.columns,
+                        y=corr.columns,
+                        color_continuous_scale='coolwarm',
+                        text_auto='.2f',
+                        aspect="auto")
+        fig2.update_layout(
+            coloraxis_colorbar=dict(
+                yanchor="bottom",
+                y=0
+            ),
+            width=800,
+            height=800,
+            xaxis_title="",
+            yaxis_title=""
+        )
+        fig2.update_traces(text=corr.values, texttemplate='%{text:.2f}')
+        st.plotly_chart(fig2, use_container_width=True)
         
         st.markdown("""
 **Nhận xét:**
